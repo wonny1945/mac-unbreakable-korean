@@ -3,11 +3,12 @@
     import Linkedin from 'lucide-svelte/icons/linkedin';
     import {Button} from "$lib/components/ui/button";
     import * as Card from "$lib/components/ui/card/index.js";
-    import {FileText, ArrowRight, Upload} from 'lucide-svelte';
+    import {ArrowRight, Upload,} from 'lucide-svelte';
     import {toggleMode} from "mode-watcher";
     import Sun from "lucide-svelte/icons/sun";
     import Moon from "lucide-svelte/icons/moon";
     import {onMount} from 'svelte';
+    import {FileLineChart} from "lucide-svelte";
 
     const languages = [
         {
@@ -45,6 +46,11 @@
     let uploadIconY = 0;
     let direction = 1;
 
+    // New code for dynamic subtitle
+    let recipients = ['Boss', 'Client', 'Colleague'];
+    let currentRecipientIndex = 0;
+    let currentRecipient = recipients[currentRecipientIndex];
+
     onMount(() => {
         const animateIcon = () => {
             uploadIconY += direction;
@@ -54,6 +60,14 @@
             requestAnimationFrame(animateIcon);
         };
         animateIcon();
+
+        // New interval for changing recipient
+        const recipientInterval = setInterval(() => {
+            currentRecipientIndex = (currentRecipientIndex + 1) % recipients.length;
+            currentRecipient = recipients[currentRecipientIndex];
+        }, 3000);
+
+        return () => clearInterval(recipientInterval);
     });
 </script>
 
@@ -98,11 +112,16 @@
 
     <main class="flex-1 container mx-auto px-4 py-8">
         <div class="text-center mb-12">
-            <h1 class="text-6xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400">
+            <p class="text-6xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400">
                 Mac Text Safer
-            </h1>
-            <p class=" text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
-                Seamlessly convert and preserve your file text integrity across platforms.
+            </p>
+            <p class="text-base text-gray-600 dark:text-gray-300 max-w-2xl mx-auto font-bold ">
+                Tired of your <span class="border rounded bg-yellow-200 px-2 font-bold text-indigo-600 dark:text-indigo-400">{currentRecipient}</span>
+                seeing <span class="border rounded bg-yellow-200 px-2 font-bold text-red-500 dark:text-red-400">'??????.pdf'</span> instead of <span
+                    class="border rounded bg-yellow-200 px-2 font-bold text-green-600 dark:text-green-400">'attach.pdf'?</span>
+            </p>
+            <p class="text-base text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+                Certain characters in Unix and Mac OS filenames can cause text corruption on Windows.
             </p>
         </div>
 
@@ -123,7 +142,7 @@
 
             <Card.Root class="p-1">
                 <Card.Header>
-                    <Card.Title class="text-2xl font-semibold text-purple-600 dark:text-purple-400 flex items-center">
+                    <Card.Title class="text-2xl font-semibold text-indigo-600 dark:text-indigo-400 flex items-center">
                         Multi-Language Support
                     </Card.Title>
                 </Card.Header>
@@ -147,7 +166,7 @@
 
         <Card.Root class="mb-8">
             <Card.Header>
-                <Card.Title class="text-xl font-semibold text-purple-600 dark:text-gray-200 flex items-center">
+                <Card.Title class="text-xl font-semibold text-indigo-600 dark:text-indigo-400 flex items-center">
                     Conversion Preview
                 </Card.Title>
             </Card.Header>
@@ -167,7 +186,6 @@
                                 </svg>
                                 <span class="text-sm font-medium text-red-700 dark:text-red-300">Before on Windows</span>
 
-                                <span class="text-sm font-medium text-red-700 dark:text-red-300">Before on Windows</span>
                             </div>
                             <p class="text-sm text-red-600 dark:text-red-300 break-all">{language.before}</p>
                         </div>
@@ -187,15 +205,17 @@
             </Card.Content>
         </Card.Root>
 
-        <div class="bg-white dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 p-12 text-center shadow relative overflow-hidden">
-            <Upload class="mx-auto h-16 w-16 text-indigo-500 absolute left-1/2 transform -translate-x-1/2"
-                    style="top: calc(50% - 32px + {uploadIconY}px);"/>
-            <h3 class="mt-28 text-2xl font-semibold text-gray-800 dark:text-gray-200">Just drop file here</h3>
-            <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                or click to select files
-            </p>
-            <Button class="mt-6" variant="default">Select Files</Button>
-        </div>
+        <Card.Root class="mb-8">
+            <div class=" dark:border-gray-600 p-12 text-center shadow relative overflow-hidden">
+                <FileLineChart class="mx-auto h-12 w-12 absolute left-1/2 transform -translate-x-1/2"
+                               style="top: calc(50% - 70px + {uploadIconY}px);"/>
+                <h3 class="mt-28 text-2xl font-semibold text-gray-800 dark:text-gray-200">Just drop file here</h3>
+                <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                    or click to select files
+                </p>
+                <Button class="mt-6 " variant="default">Select Files</Button>
+            </div>
+        </Card.Root>
     </main>
 
     <footer class="mt-4 bg-gray-150 dark:bg-gray-800 py-6">
