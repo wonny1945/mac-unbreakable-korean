@@ -3,7 +3,7 @@
     import Linkedin from 'lucide-svelte/icons/linkedin';
     import {Button} from "$lib/components/ui/button";
     import * as Card from "$lib/components/ui/card/index.js";
-    import {ArrowRight, Upload,} from 'lucide-svelte';
+    import {ArrowRight} from 'lucide-svelte';
     import {toggleMode} from "mode-watcher";
     import Sun from "lucide-svelte/icons/sun";
     import Moon from "lucide-svelte/icons/moon";
@@ -47,11 +47,50 @@
     let direction = 1;
 
     // New code for dynamic subtitle
-    let recipients = ['Boss', 'Client', 'Colleague'];
+    let recipients = ['Boss', 'Client'];
     let currentRecipientIndex = 0;
     let currentRecipient = recipients[currentRecipientIndex];
 
+
+    // Drag & Drop files
+    let dropZone;
+    let fileInput;
+    let isDragging = false;
+    let files = [];
+
+
+    function handleDragEnter(e) {
+        e.preventDefault();
+        isDragging = true;
+    }
+
+    function handleDragLeave(e) {
+        e.preventDefault();
+        isDragging = false;
+    }
+
+    function handleDrop(e) {
+        e.preventDefault();
+        isDragging = false;
+        handleFiles(e.dataTransfer.files);
+    }
+
+    function handleFileInput(e) {
+        handleFiles(e.target.files);
+    }
+
+    function handleFiles(fileList) {
+        files = Array.from(fileList);
+        // 여기에서 파일 처리 로직을 구현합니다.
+        console.log(files);
+    }
+
     onMount(() => {
+        dropZone.addEventListener('dragenter', handleDragEnter);
+        dropZone.addEventListener('dragleave', handleDragLeave);
+        dropZone.addEventListener('dragover', (e) => e.preventDefault());
+        dropZone.addEventListener('drop', handleDrop);
+
         const animateIcon = () => {
             uploadIconY += direction;
             if (uploadIconY > 10 || uploadIconY < -10) {
@@ -61,20 +100,19 @@
         };
         animateIcon();
 
-        // New interval for changing recipient
-        const recipientInterval = setInterval(() => {
-            currentRecipientIndex = (currentRecipientIndex + 1) % recipients.length;
-            currentRecipient = recipients[currentRecipientIndex];
-        }, 3000);
-
-        return () => clearInterval(recipientInterval);
+        return () => {
+            dropZone.removeEventListener('dragenter', handleDragEnter);
+            dropZone.removeEventListener('dragleave', handleDragLeave);
+            dropZone.removeEventListener('dragover', (e) => e.preventDefault());
+            dropZone.removeEventListener('drop', handleDrop);
+        };
     });
 </script>
 
 <div class="flex min-h-screen w-full flex-col bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-indigo-900">
     <header class="sticky top-0 z-10 flex h-16 items-center border-b bg-white/80 backdrop-blur-sm dark:bg-gray-900/80 dark:border-gray-700">
         <div class="container mx-auto px-4 flex justify-between items-center">
-            <div class="flex items-center gap-2 text-xl font-semibold">
+            <div class="flex items-center gap-2 text-xl font-semibold relative ">
                 <svg class="w-8 h-8" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
                     <defs>
                         <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -85,9 +123,23 @@
                     <path d="M50 5 L90 25 V60 C90 75 75 90 50 95 C25 90 10 75 10 60 V25 Z" fill="url(#grad1)"/>
                     <path d="M35 35 H65 V45 H55 V65 H45 V45 H35 Z" fill="#FFFFFF"/>
                 </svg>
-                <span class="bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400">
-                    Mac Text Safer
-                </span>
+                <span class="bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 drop-shadow">
+                Mac Text Safer
+            </span>
+                <svg class="absolute -top-4 -right-32 h-16 " xmlns="http://www.w3.org/2000/svg"
+                     viewBox="0 0 120 45">
+                    <defs>
+                        <clipPath id="bannerClip">
+                            <path d="M0,0 L120,0 L120,50 L0,45 Z"/>
+                        </clipPath>
+                    </defs>
+                    <g clip-path="url(#bannerClip)" class="drop-shadow">
+                        <rect x="-30" y="10" width="180" height="21" fill="#FFD700" transform="rotate(-40,65,22.5)"/>
+                        <text x="60" y="28" text-anchor="middle" font-size="9" fill="#000000"
+                              transform="rotate(-40,60,22.5)">100% Free
+                        </text>
+                    </g>
+                </svg>
             </div>
             <div class="flex items-center gap-4">
                 <Button variant="ghost" size="icon">
@@ -111,17 +163,24 @@
     </header>
 
     <main class="flex-1 container mx-auto px-4 py-8">
-        <div class="text-center mb-12">
-            <p class="text-6xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400">
+        <div class="text-center mb-12 dro">
+            <p class="text-6xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 drop-shadow">
                 Mac Text Safer
             </p>
-            <p class="text-base text-gray-600 dark:text-gray-300 max-w-2xl mx-auto font-bold ">
-                Tired of your <span class="border rounded bg-yellow-200 px-2 font-bold text-indigo-600 dark:text-indigo-400">{currentRecipient}</span>
-                seeing <span class="border rounded bg-yellow-200 px-2 font-bold text-red-500 dark:text-red-400">'??????.pdf'</span> instead of <span
+            <p class="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto font-bold ">
+                Tired of your <span
+                    class="border rounded bg-yellow-200 px-2 font-bold text-indigo-600 dark:text-indigo-400">{currentRecipient}</span>
+                seeing <span class="border rounded bg-yellow-200 px-2 font-bold text-red-500 dark:text-red-400">'??????.pdf'</span>
+                instead of <span
                     class="border rounded bg-yellow-200 px-2 font-bold text-green-600 dark:text-green-400">'attach.pdf'?</span>
             </p>
-            <p class="text-base text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-                Certain characters in Unix and Mac OS filenames can cause text corruption on Windows.
+            <p class="text-xl text-gray-700 dark:text-gray-300 max-w-2xl mx-auto mt-1">
+                <span class="border rounded bg-yellow-200 px-2 font-semibold text-indigo-600 dark:text-indigo-400">Simply drag and drop</span>
+                your files
+                into <span
+                    class=" border rounded bg-yellow-200 px-2 font-semibold text-indigo-600 dark:text-indigo-400">Mac Text Safer</span>
+                to ensure
+                your filenames stay intact on Windows.
             </p>
         </div>
 
@@ -206,16 +265,39 @@
         </Card.Root>
 
         <Card.Root class="mb-8">
-            <div class=" dark:border-gray-600 p-12 text-center shadow relative overflow-hidden">
-                <FileLineChart class="mx-auto h-12 w-12 absolute left-1/2 transform -translate-x-1/2"
-                               style="top: calc(50% - 70px + {uploadIconY}px);"/>
-                <h3 class="mt-28 text-2xl font-semibold text-gray-800 dark:text-gray-200">Just drop file here</h3>
+            <div
+                    bind:this={dropZone}
+                    class="dark:border-gray-600 p-12 text-center shadow relative overflow-hidden transition-colors duration-300"
+                    class:bg-blue-50={isDragging}
+                    class:dark:bg-blue-900={isDragging}
+            >
+                <FileLineChart
+                        class="mx-auto h-12 w-12 absolute left-1/2 transform -translate-x-1/2 transition-colors duration-300"
+                        style="top: calc(50% - 70px + {uploadIconY}px);"
+                />
+                <h3 class="mt-28 text-2xl font-semibold text-gray-800 dark:text-gray-200">
+                    {isDragging ? 'Drop files here' : 'Just drop file here'}
+                </h3>
                 <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
                     or click to select files
                 </p>
-                <Button class="mt-6 " variant="default">Select Files</Button>
+                <input
+                        type="file"
+                        bind:this={fileInput}
+                        on:change={handleFileInput}
+                        class="hidden"
+                        multiple
+                />
+                <Button
+                        class="mt-6"
+                        variant="default"
+                        on:click={() => fileInput.click()}
+                >
+                    Select Files
+                </Button>
             </div>
         </Card.Root>
+
     </main>
 
     <footer class="mt-4 bg-gray-150 dark:bg-gray-800 py-6">
