@@ -9,6 +9,19 @@
     import Moon from "lucide-svelte/icons/moon";
     import {onMount} from 'svelte';
     import {FileLineChart} from "lucide-svelte";
+    import * as Select from "$lib/components/ui/select";
+    import {ChevronDown} from 'lucide-svelte';
+
+
+    const countries = [
+        {value: "us", label: "🇺🇸 United States"},
+        {value: "kr", label: "🇰🇷 South Korea"},
+        {value: "cn", label: "🇨🇳 China",},
+        {value: "jp", label: "🇯🇵 Japan"},
+        {value: "th", label: "🇹🇭 Thailand"},
+        {value: "ae", label: "🇦🇪 United Arab Emirates",}
+    ];
+
 
     const languages = [
         {
@@ -85,12 +98,43 @@
         console.log(files);
     }
 
+
+    //detection country
+    let userCountry = '';
+    let userCountryCode = '';
+    let isLoading = true;
+    let error = null;
+    let selectedCountry = countries[0]; // Default to US
+
+    async function detectCountry() {
+        try {
+            const response = await fetch('https://ipapi.co/json/');
+            if (!response.ok) {
+                throw new Error('Failed to fetch country information');
+            }
+            const data = await response.json();
+            const detectedCountry = countries.find(c => c.value === data.country_code.toLowerCase());
+            if (detectedCountry) {
+                selectedCountry = detectedCountry;
+            }
+        } catch (err) {
+            console.error('Error detecting country:', err);
+        }
+    }
+
+    let selectedLanguage = languages[0];
+
+    function handleLanguageChange(event) {
+        selectedLanguage = languages.find(lang => lang.name === event.target.value) || languages[0];
+    }
+
     onMount(() => {
         dropZone.addEventListener('dragenter', handleDragEnter);
         dropZone.addEventListener('dragleave', handleDragLeave);
         dropZone.addEventListener('dragover', (e) => e.preventDefault());
         dropZone.addEventListener('drop', handleDrop);
 
+        detectCountry();
         const animateIcon = () => {
             uploadIconY += direction;
             if (uploadIconY > 10 || uploadIconY < -10) {
@@ -99,12 +143,18 @@
             requestAnimationFrame(animateIcon);
         };
         animateIcon();
+        // currentRecipient를 주기적으로 변경하는 로직 추가
+        const recipientInterval = setInterval(() => {
+            currentRecipientIndex = (currentRecipientIndex + 1) % recipients.length;
+            currentRecipient = recipients[currentRecipientIndex];
+        }, 1000); // 3초마다 변경
 
         return () => {
             dropZone.removeEventListener('dragenter', handleDragEnter);
             dropZone.removeEventListener('dragleave', handleDragLeave);
             dropZone.removeEventListener('dragover', (e) => e.preventDefault());
             dropZone.removeEventListener('drop', handleDrop);
+            clearInterval(recipientInterval);
         };
     });
 </script>
@@ -142,6 +192,21 @@
                 </svg>
             </div>
             <div class="flex items-center gap-4">
+
+                <Select.Root selected={selectedCountry ? { label: selectedCountry.label } : undefined}>
+                    <Select.Trigger class="w-[250px]">
+                        <Select.Value placeholder="Select a language"/>
+                    </Select.Trigger>
+                    <Select.Content>
+                        <Select.Group>
+                            {#each countries as country}
+                                <Select.Item value={country.value}> {country.label}
+                                </Select.Item>
+                            {/each}
+                        </Select.Group>
+                    </Select.Content>
+                </Select.Root>
+
                 <Button variant="ghost" size="icon">
                     <a href="https://github.com/wonny1945" target="_blank" rel="noopener noreferrer">
                         <Github class="h-5 w-5"/>
@@ -158,6 +223,7 @@
                     <Moon class="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100"/>
                     <span class="sr-only">Toggle theme</span>
                 </Button>
+
             </div>
         </div>
     </header>
@@ -273,14 +339,32 @@
             >
                 <FileLineChart
                         class="mx-auto h-12 w-12 absolute left-1/2 transform -translate-x-1/2 transition-colors duration-300"
-                        style="top: calc(50% - 70px + {uploadIconY}px);"
+                        style="top: calc(50% - 90px + {uploadIconY}px);"
                 />
-                <h3 class="mt-28 text-2xl font-semibold text-gray-800 dark:text-gray-200">
+                <h3 class="mt-24 text-2xl font-semibold text-gray-800 dark:text-gray-200">
                     {isDragging ? 'Drop files here' : 'Just drop file here'}
                 </h3>
                 <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
                     or click to select files
                 </p>
+                <div class="mt-2 flex flex-col justify-center items-center space-x-4">
+                    <p class="text-base text-gray-600 dark:text-gray-300">
+                        Selected file language:
+                    </p>
+                    <div class="relative inline-block text-left">
+                        <select
+                                class="appearance-none bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 py-2 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
+                                on:change={handleLanguageChange}
+                        >
+                            {#each languages as language}
+                                <option value={language.name}>{language.flag} {language.name}</option>
+                            {/each}
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700 dark:text-gray-200">
+                            <ChevronDown class="h-4 w-4"/>
+                        </div>
+                    </div>
+                </div>
                 <input
                         type="file"
                         bind:this={fileInput}
@@ -299,8 +383,7 @@
         </Card.Root>
 
     </main>
-
-    <footer class="mt-4 bg-gray-150 dark:bg-gray-800 py-6">
+    <footer class="-mt-2 bg-gray-150 dark:bg-gray-800 py-6">
         <div class="container  px-1 text-center text-gray-600 dark:text-gray-300">
             &copy; 2024 Mac Text Safer. All rights reserved.
         </div>
