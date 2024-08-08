@@ -45,6 +45,27 @@
             after: "こんにちは.pdf",
             flag: "🇯🇵"
         },
+        {
+            name: "Thai (ไทย)",
+            original: "สวัสดี.pdf",
+            before: "??????.pdf",
+            after: "สวัสดี.pdf",
+            flag: "🇹🇭"
+        },
+        {
+            name: "Arabic (العربية)",
+            original: "مرحبا.pdf",
+            before: "????.pdf",
+            after: "مرحبا.pdf",
+            flag: "🇦🇪"
+        },
+        {
+            name: "Russian (Русский)",
+            original: "Привет.pdf",
+            before: "??????.pdf",
+            after: "Привет.pdf",
+            flag: "🇷🇺"
+        }
     ];
 
     let currentIndex = 0;
@@ -147,7 +168,7 @@
         const recipientInterval = setInterval(() => {
             currentRecipientIndex = (currentRecipientIndex + 1) % recipients.length;
             currentRecipient = recipients[currentRecipientIndex];
-        }, 1000); // 3초마다 변경
+        }, 2000); // 3초마다 변경
 
         return () => {
             dropZone.removeEventListener('dragenter', handleDragEnter);
@@ -338,31 +359,31 @@
                     class:dark:bg-blue-900={isDragging}
             >
                 <FileLineChart
-                        class="mx-auto h-12 w-12 absolute left-1/2 transform -translate-x-1/2 transition-colors duration-300"
+                        class="mx-auto  h-12 w-12 absolute left-1/2 transform -translate-x-1/2 transition-colors duration-500"
                         style="top: calc(50% - 90px + {uploadIconY}px);"
                 />
-                <h3 class="mt-24 text-2xl font-semibold text-gray-800 dark:text-gray-200">
+                <h3 class="mt-28 text-2xl font-semibold text-gray-800 dark:text-gray-200">
                     {isDragging ? 'Drop files here' : 'Just drop file here'}
                 </h3>
                 <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
                     or click to select files
                 </p>
                 <div class="mt-2 flex flex-col justify-center items-center space-x-4">
-                    <p class="text-base text-gray-600 dark:text-gray-300">
-                        Selected file language:
-                    </p>
                     <div class="relative inline-block text-left">
-                        <select
-                                class="appearance-none bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 py-2 px-4 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
-                                on:change={handleLanguageChange}
-                        >
-                            {#each languages as language}
-                                <option value={language.name}>{language.flag} {language.name}</option>
-                            {/each}
-                        </select>
-                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700 dark:text-gray-200">
-                            <ChevronDown class="h-4 w-4"/>
-                        </div>
+                        <Select.Root selected={selectedLanguage.name}>
+                            <Select.Trigger class="w-[250px]">
+                                <Select.Value placeholder="Selected file language"/>
+                            </Select.Trigger>
+                            <Select.Content>
+                                <Select.Group>
+                                    {#each languages as language}
+                                        <Select.Item value={language.name}>
+                                            {language.flag} {language.name}
+                                        </Select.Item>
+                                    {/each}
+                                </Select.Group>
+                            </Select.Content>
+                        </Select.Root>
                     </div>
                 </div>
                 <input
@@ -385,7 +406,7 @@
     </main>
     <footer class="-mt-2 bg-gray-150 dark:bg-gray-800 py-6">
         <div class="container  px-1 text-center text-gray-600 dark:text-gray-300">
-            &copy; 2024 Mac Text Safer. All rights reserved.
+            &copy; 2024 Mac Text Safer. All rights reserved Wonny.
         </div>
     </footer>
 </div>
