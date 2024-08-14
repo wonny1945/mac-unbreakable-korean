@@ -12,16 +12,14 @@
     import * as Select from "$lib/components/ui/select";
     import {ChevronDown} from 'lucide-svelte';
 
-
     const countries = [
         {value: "us", label: "🇺🇸 United States"},
-        {value: "kr", label: "🇰🇷 South Korea"},
-        {value: "cn", label: "🇨🇳 China",},
-        {value: "jp", label: "🇯🇵 Japan"},
-        {value: "th", label: "🇹🇭 Thailand"},
-        {value: "ae", label: "🇦🇪 United Arab Emirates",}
+        {value: "kr", label: "🇰🇷 Korean(한국어)"},
+        {value: "cn", label: "🇨🇳 Chinese(中文)",},
+        {value: "jp", label: "🇯🇵 Japanese(日本語)"},
+        {value: "th", label: "🇹🇭 Thailand(ไทย)"},
+        {value: "ae", label: "🇦🇪 Arab Emirates(العربية)",}
     ];
-
 
     const languages = [
         {
@@ -59,13 +57,6 @@
             after: "مرحبا.pdf",
             flag: "🇦🇪"
         },
-        {
-            name: "Russian (Русский)",
-            original: "Привет.pdf",
-            before: "??????.pdf",
-            after: "Привет.pdf",
-            flag: "🇷🇺"
-        }
     ];
 
     let currentIndex = 0;
@@ -85,13 +76,11 @@
     let currentRecipientIndex = 0;
     let currentRecipient = recipients[currentRecipientIndex];
 
-
     // Drag & Drop files
     let dropZone;
     let fileInput;
     let isDragging = false;
     let files = [];
-
 
     function handleDragEnter(e) {
         e.preventDefault();
@@ -115,17 +104,25 @@
 
     function handleFiles(fileList) {
         files = Array.from(fileList);
-        // 여기에서 파일 처리 로직을 구현합니다.
         console.log(files);
     }
 
-
-    //detection country
+    // Detection country
     let userCountry = '';
     let userCountryCode = '';
     let isLoading = true;
     let error = null;
     let selectedCountry = countries[0]; // Default to US
+    let selectedLanguage = languages[0]; // Default to the first language
+
+    const countryLanguageMap = {
+        us: "English",
+        kr: "Korean (한국어)",
+        cn: "Chinese (中文)",
+        jp: "Japanese (日本語)",
+        th: "Thai (ไทย)",
+        ae: "Arabic (العربية)"
+    };
 
     async function detectCountry() {
         try {
@@ -137,16 +134,19 @@
             const detectedCountry = countries.find(c => c.value === data.country_code.toLowerCase());
             if (detectedCountry) {
                 selectedCountry = detectedCountry;
+                // 감지된 국가에 해당하는 언어 선택
+                const detectedLanguage = countryLanguageMap[detectedCountry.value];
+                selectedLanguage = languages.find(lang => lang.name === detectedLanguage) || languages[0];
+                console.log(selectedLanguage)
             }
         } catch (err) {
             console.error('Error detecting country:', err);
         }
     }
 
-    let selectedLanguage = languages[0];
+      function handleLanguageChange(event: CustomEvent<any>) {
+        selectedLanguage = languages.find(lang => lang.name === event.detail.value) || languages[0];
 
-    function handleLanguageChange(event) {
-        selectedLanguage = languages.find(lang => lang.name === event.target.value) || languages[0];
     }
 
     onMount(() => {
@@ -164,11 +164,11 @@
             requestAnimationFrame(animateIcon);
         };
         animateIcon();
-        // currentRecipient를 주기적으로 변경하는 로직 추가
+
         const recipientInterval = setInterval(() => {
             currentRecipientIndex = (currentRecipientIndex + 1) % recipients.length;
             currentRecipient = recipients[currentRecipientIndex];
-        }, 2000); // 3초마다 변경
+        }, 2000);
 
         return () => {
             dropZone.removeEventListener('dragenter', handleDragEnter);
@@ -310,57 +310,17 @@
             </Card.Root>
         </div>
 
-        <Card.Root class="mb-8">
-            <Card.Header>
-                <Card.Title class="text-xl font-semibold text-indigo-600 dark:text-indigo-400 flex items-center">
-                    Conversion Preview
-                </Card.Title>
-            </Card.Header>
-            <Card.Content>
-                {#each [languages[currentIndex]] as language (currentIndex)}
-                    <div class="mb-2">
-                        <h3 class="text-lg font-semibold text-gray-600 dark:text-gray-300 flex items-center">
-                            <span class="text-2xl mr-2">{language.flag}</span> {language.name} : {language.original}
-                        </h3>
-                    </div>
-                    <div class="flex items-center space-x-4">
-                        <div class="flex-1 bg-red-50 dark:bg-red-900 rounded-lg shadow p-4">
-                            <div class="flex items-center text-blue-400 mb-2">
-                                <svg class="w-5 h-5 mr-2" viewBox="0 0 88 88" xmlns="http://www.w3.org/2000/svg">
-                                    <path fill="currentColor"
-                                          d="M0,12.402,35.687,7.861,35.69,41.406,0,41.37M39.996,6.906l52.016-7.5V41.41L39.996,41.376M35.69,45.9,35.687,79.601,0,75.083V45.9M39.996,46.249l52.016.026L92.003,80.9,39.996,88"/>
-                                </svg>
-                                <span class="text-sm font-medium text-red-700 dark:text-red-300">Before on Windows</span>
-
-                            </div>
-                            <p class="text-sm text-red-600 dark:text-red-300 break-all">{language.before}</p>
-                        </div>
-                        <ArrowRight class="w-6 h-6 text-indigo-500 flex-shrink-0"/>
-                        <div class="flex-1 bg-green-50 dark:bg-green-900 rounded-lg shadow p-4">
-                            <div class="flex items-center text-blue-400 mb-2">
-                                <svg class="w-5 h-5 mr-2" viewBox="0 0 88 88" xmlns="http://www.w3.org/2000/svg">
-                                    <path fill="currentColor"
-                                          d="M0,12.402,35.687,7.861,35.69,41.406,0,41.37M39.996,6.906l52.016-7.5V41.41L39.996,41.376M35.69,45.9,35.687,79.601,0,75.083V45.9M39.996,46.249l52.016.026L92.003,80.9,39.996,88"/>
-                                </svg>
-                                <span class="text-sm font-medium text-green-700 dark:text-green-300">Fixed on Windows</span>
-                            </div>
-                            <p class="text-sm text-green-600 dark:text-green-300 break-all">{language.after}</p>
-                        </div>
-                    </div>
-                {/each}
-            </Card.Content>
-        </Card.Root>
 
         <Card.Root class="mb-8">
             <div
-                    bind:this={dropZone}
-                    class="dark:border-gray-600 p-12 text-center shadow relative overflow-hidden transition-colors duration-300"
-                    class:bg-blue-50={isDragging}
-                    class:dark:bg-blue-900={isDragging}
+                bind:this={dropZone}
+                class="dark:border-gray-600 p-12 text-center shadow relative overflow-hidden transition-colors duration-300"
+                class:bg-blue-50={isDragging}
+                class:dark:bg-blue-900={isDragging}
             >
                 <FileLineChart
-                        class="mx-auto  h-12 w-12 absolute left-1/2 transform -translate-x-1/2 transition-colors duration-500"
-                        style="top: calc(50% - 90px + {uploadIconY}px);"
+                    class="mx-auto h-12 w-12 absolute left-1/2 transform -translate-x-1/2 transition-colors duration-500"
+                    style="top: calc(50% - 90px + {uploadIconY}px);"
                 />
                 <h3 class="mt-28 text-2xl font-semibold text-gray-800 dark:text-gray-200">
                     {isDragging ? 'Drop files here' : 'Just drop file here'}
@@ -370,7 +330,8 @@
                 </p>
                 <div class="mt-2 flex flex-col justify-center items-center space-x-4">
                     <div class="relative inline-block text-left">
-                        <Select.Root selected={selectedLanguage.name}>
+
+                    <Select.Root selected={selectedLanguage ? { value: selectedLanguage.name, label: selectedLanguage.name } : undefined}>
                             <Select.Trigger class="w-[250px]">
                                 <Select.Value placeholder="Selected file language"/>
                             </Select.Trigger>
@@ -387,25 +348,25 @@
                     </div>
                 </div>
                 <input
-                        type="file"
-                        bind:this={fileInput}
-                        on:change={handleFileInput}
-                        class="hidden"
-                        multiple
+                    type="file"
+                    bind:this={fileInput}
+                    on:change={handleFileInput}
+                    class="hidden"
+                    multiple
                 />
                 <Button
-                        class="mt-6"
-                        variant="default"
-                        on:click={() => fileInput.click()}
+                    class="mt-6"
+                    variant="default"
+                    on:click={() => fileInput.click()}
                 >
                     Select Files
                 </Button>
             </div>
         </Card.Root>
-
     </main>
+
     <footer class="-mt-2 bg-gray-150 dark:bg-gray-800 py-6">
-        <div class="container  px-1 text-center text-gray-600 dark:text-gray-300">
+        <div class="container px-1 text-center text-gray-600 dark:text-gray-300">
             &copy; 2024 Mac Text Safer. All rights reserved Wonny.
         </div>
     </footer>
