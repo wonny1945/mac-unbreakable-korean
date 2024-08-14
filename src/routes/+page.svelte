@@ -1,13 +1,25 @@
 <script lang="ts">
-
-    import CircleUser from "lucide-svelte/icons/circle-user";
-    import * as Avatar from "$lib/components/ui/avatar/index.js";
-    import {Badge} from "$lib/components/ui/badge/index.js";
-    import {Button} from "$lib/components/ui/button/index.js";
+    import Github from 'lucide-svelte/icons/github';
+    import Linkedin from 'lucide-svelte/icons/linkedin';
+    import {Button} from "$lib/components/ui/button";
     import * as Card from "$lib/components/ui/card/index.js";
-    import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
-    import {FileText, ArrowRight} from 'lucide-svelte';
+    import {ArrowRight} from 'lucide-svelte';
+    import {toggleMode} from "mode-watcher";
+    import Sun from "lucide-svelte/icons/sun";
+    import Moon from "lucide-svelte/icons/moon";
+    import {onMount} from 'svelte';
+    import {FileLineChart} from "lucide-svelte";
+    import * as Select from "$lib/components/ui/select";
+    import {ChevronDown} from 'lucide-svelte';
 
+    const countries = [
+        {value: "us", label: "🇺🇸 United States"},
+        {value: "kr", label: "🇰🇷 Korean(한국어)"},
+        {value: "cn", label: "🇨🇳 Chinese(中文)",},
+        {value: "jp", label: "🇯🇵 Japanese(日本語)"},
+        {value: "th", label: "🇹🇭 Thailand(ไทย)"},
+        {value: "ae", label: "🇦🇪 Arab Emirates(العربية)",}
+    ];
 
     const languages = [
         {
@@ -15,18 +27,35 @@
             original: "안녕하세요.pdf",
             before: "ㅇㅏㄴㄴㅕㅇㅎㅏㅅㅔㅇㅛ.pdf",
             after: "안녕하세요.pdf",
+            flag: "🇰🇷"
         },
         {
             name: "Chinese (中文)",
             original: "你好世界.pdf",
             before: "?????.pdf",
             after: "你好世界.pdf",
+            flag: "🇨🇳"
         },
         {
             name: "Japanese (日本語)",
             original: "こんにちは.pdf",
             before: "????????.pdf",
             after: "こんにちは.pdf",
+            flag: "🇯🇵"
+        },
+        {
+            name: "Thai (ไทย)",
+            original: "สวัสดี.pdf",
+            before: "??????.pdf",
+            after: "สวัสดี.pdf",
+            flag: "🇹🇭"
+        },
+        {
+            name: "Arabic (العربية)",
+            original: "مرحبا.pdf",
+            before: "????.pdf",
+            after: "مرحبا.pdf",
+            flag: "🇦🇪"
         },
     ];
 
@@ -36,17 +65,126 @@
         currentIndex = (currentIndex + 1) % languages.length;
     }
 
-    // Auto-rotate every 5 seconds
-    setInterval(next, 2000);
+    // Auto-rotate every 3 seconds
+    setInterval(next, 3000);
+
+    let uploadIconY = 0;
+    let direction = 1;
+
+    // New code for dynamic subtitle
+    let recipients = ['Boss', 'Client'];
+    let currentRecipientIndex = 0;
+    let currentRecipient = recipients[currentRecipientIndex];
+
+    // Drag & Drop files
+    let dropZone;
+    let fileInput;
+    let isDragging = false;
+    let files = [];
+
+    function handleDragEnter(e) {
+        e.preventDefault();
+        isDragging = true;
+    }
+
+    function handleDragLeave(e) {
+        e.preventDefault();
+        isDragging = false;
+    }
+
+    function handleDrop(e) {
+        e.preventDefault();
+        isDragging = false;
+        handleFiles(e.dataTransfer.files);
+    }
+
+    function handleFileInput(e) {
+        handleFiles(e.target.files);
+    }
+
+    function handleFiles(fileList) {
+        files = Array.from(fileList);
+        console.log(files);
+    }
+
+    // Detection country
+    let userCountry = '';
+    let userCountryCode = '';
+    let isLoading = true;
+    let error = null;
+    let selectedCountry = countries[0]; // Default to US
+    let selectedLanguage = languages[0]; // Default to the first language
+
+    const countryLanguageMap = {
+        us: "English",
+        kr: "Korean (한국어)",
+        cn: "Chinese (中文)",
+        jp: "Japanese (日本語)",
+        th: "Thai (ไทย)",
+        ae: "Arabic (العربية)"
+    };
+
+    async function detectCountry() {
+        try {
+            const response = await fetch('https://ipapi.co/json/');
+            if (!response.ok) {
+                throw new Error('Failed to fetch country information');
+            }
+            const data = await response.json();
+            const detectedCountry = countries.find(c => c.value === data.country_code.toLowerCase());
+            if (detectedCountry) {
+                selectedCountry = detectedCountry;
+                // 감지된 국가에 해당하는 언어 선택
+                const detectedLanguage = countryLanguageMap[detectedCountry.value];
+                selectedLanguage = languages.find(lang => lang.name === detectedLanguage) || languages[0];
+                console.log(selectedLanguage)
+            }
+        } catch (err) {
+            console.error('Error detecting country:', err);
+        }
+    }
+
+      function handleLanguageChange(event: CustomEvent<any>) {
+        selectedLanguage = languages.find(lang => lang.name === event.detail.value) || languages[0];
+
+    }
+
+    onMount(() => {
+        dropZone.addEventListener('dragenter', handleDragEnter);
+        dropZone.addEventListener('dragleave', handleDragLeave);
+        dropZone.addEventListener('dragover', (e) => e.preventDefault());
+        dropZone.addEventListener('drop', handleDrop);
+
+        detectCountry();
+        const animateIcon = () => {
+            uploadIconY += direction;
+            if (uploadIconY > 10 || uploadIconY < -10) {
+                direction *= -1;
+            }
+            requestAnimationFrame(animateIcon);
+        };
+        animateIcon();
+
+        const recipientInterval = setInterval(() => {
+            currentRecipientIndex = (currentRecipientIndex + 1) % recipients.length;
+            currentRecipient = recipients[currentRecipientIndex];
+        }, 2000);
+
+        return () => {
+            dropZone.removeEventListener('dragenter', handleDragEnter);
+            dropZone.removeEventListener('dragleave', handleDragLeave);
+            dropZone.removeEventListener('dragover', (e) => e.preventDefault());
+            dropZone.removeEventListener('drop', handleDrop);
+            clearInterval(recipientInterval);
+        };
+    });
 </script>
 
-<div class="flex min-h-screen w-full flex-col bg-gradient-to-r from-blue-50 to-purple-50">
-    <header class="sticky top-0 flex h-16 items-center border-b gap-2 bg-background px-2 md:px-6">
-        <nav
-                class="hidden w-full flex-col ㄴtext-lg font-medium md:flex md:flex-row md:items-center md:gap-5 md:text-sm lg:gap-6 "
-        >
-            <a href="##" class="flex items-center gap-2 text-lg font-semibold md:text-base group">
-                <svg class="w-7 h-7" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+<div class="flex min-h-screen w-full flex-col bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-indigo-900">
+    <header class="sticky top-0 z-10 flex h-16 items-center border-b bg-white/80 backdrop-blur-sm dark:bg-gray-900/80 dark:border-gray-700">
+        <div class="container mx-auto px-4 flex justify-between items-center">
+            <div class="flex items-center gap-2 text-xl font-semibold relative ">
+                <svg class="w-8 h-8" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
                     <defs>
                         <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
                             <stop offset="0%" style="stop-color:#4F46E5;stop-opacity:1"/>
@@ -56,103 +194,180 @@
                     <path d="M50 5 L90 25 V60 C90 75 75 90 50 95 C25 90 10 75 10 60 V25 Z" fill="url(#grad1)"/>
                     <path d="M35 35 H65 V45 H55 V65 H45 V45 H35 Z" fill="#FFFFFF"/>
                 </svg>
-                <span class="bg-clip-text text-transparent bg-gradient-to-r from-[#4F46E5] to-[#7C3AED] group-hover:from-[#7C3AED] group-hover:to-[#4F46E5] transition-all duration-300">
+                <span class="bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 drop-shadow">
                 Mac Text Safer
             </span>
-            </a>
-        </nav>
+                <svg class="absolute -top-4 -right-32 h-16 " xmlns="http://www.w3.org/2000/svg"
+                     viewBox="0 0 120 45">
+                    <defs>
+                        <clipPath id="bannerClip">
+                            <path d="M0,0 L120,0 L120,50 L0,45 Z"/>
+                        </clipPath>
+                    </defs>
+                    <g clip-path="url(#bannerClip)" class="drop-shadow">
+                        <rect x="-30" y="10" width="180" height="21" fill="#FFD700" transform="rotate(-40,65,22.5)"/>
+                        <text x="60" y="28" text-anchor="middle" font-size="9" fill="#000000"
+                              transform="rotate(-40,60,22.5)">100% Free
+                        </text>
+                    </g>
+                </svg>
+            </div>
+            <div class="flex items-center gap-4">
 
-        <div class="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
-            <form class="ml-auto flex-1 sm:flex-initial">
-                <div class="relative">
+                <Select.Root selected={selectedCountry ? { label: selectedCountry.label } : undefined}>
+                    <Select.Trigger class="w-[250px]">
+                        <Select.Value placeholder="Select a language"/>
+                    </Select.Trigger>
+                    <Select.Content>
+                        <Select.Group>
+                            {#each countries as country}
+                                <Select.Item value={country.value}> {country.label}
+                                </Select.Item>
+                            {/each}
+                        </Select.Group>
+                    </Select.Content>
+                </Select.Root>
 
-                </div>
-            </form>
-            <DropdownMenu.Root>
-                <DropdownMenu.Trigger asChild let:builder>
-                    <Button
-                            builders={[builder]}
-                            variant="secondary"
-                            size="icon"
-                            class="rounded-full"
-                    >
-                        <CircleUser class="h-5 w-5"/>
-                        <span class="sr-only">Toggle user menu</span>
-                    </Button>
-                </DropdownMenu.Trigger>
-                <DropdownMenu.Content align="end">
-                    <DropdownMenu.Label>My Account</DropdownMenu.Label>
-                    <DropdownMenu.Separator/>
-                    <DropdownMenu.Item>Settings</DropdownMenu.Item>
-                    <DropdownMenu.Item>Support</DropdownMenu.Item>
-                    <DropdownMenu.Separator/>
-                    <DropdownMenu.Item>Logout</DropdownMenu.Item>
-                </DropdownMenu.Content>
-            </DropdownMenu.Root>
-        </div>
-    </header>
-    <main class="flex flex-1 flex-col gap-4 p-2 lg:gap-6 lg:p-6">
-        <div class="flex flex-col justify-center items-center mt-8 text-center">
-            <h1 class="text-5xl md:text-6xl font-bold mb-1 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
-                Mac Text Safer
-            </h1>
-            <div class="max-w-2xl mx-auto px-4">
-                <div class="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-lg ">
-                    <div class="flex items-center justify-center mb-2">
-                        <svg class="w-6 h-6 mr-2 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                             xmlns="http://www.w3.org/2000/svg">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
-                        </svg>
-                        <h2 class="text-xl font-bold text-gray-800">Seamless File Conversion</h2>
-                    </div>
-                    <p class="text-center text-gray-600">
-                        Drag, drop, and preserve your text integrity globally.
-                        <span class="block mt-1 font-semibold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
-                Mac-to-Windows compatibility for all languages!
-            </span>
-                    </p>
-                </div>
+                <Button variant="ghost" size="icon">
+                    <a href="https://github.com/wonny1945" target="_blank" rel="noopener noreferrer">
+                        <Github class="h-5 w-5"/>
+                    </a>
+                </Button>
+                <Button variant="ghost" size="icon">
+                    <a href="https://www.linkedin.com/in/%EC%A4%80%EC%9D%BC-%EC%9B%90-58975525b/" target="_blank"
+                       rel="noopener noreferrer">
+                        <Linkedin class="h-5 w-5"/>
+                    </a>
+                </Button>
+                <Button on:click={toggleMode} variant="ghost" size="icon">
+                    <Sun class="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0"/>
+                    <Moon class="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100"/>
+                    <span class="sr-only">Toggle theme</span>
+                </Button>
+
             </div>
         </div>
-        <Card.Root>
-            {#each [languages[currentIndex]] as language (currentIndex)}
+    </header>
+
+    <main class="flex-1 container mx-auto px-4 py-8">
+        <div class="text-center mb-12 dro">
+            <p class="text-6xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 drop-shadow">
+                Mac Text Safer
+            </p>
+            <p class="text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto font-bold ">
+                Tired of your <span
+                    class="border rounded bg-yellow-200 px-2 font-bold text-indigo-600 dark:text-indigo-400">{currentRecipient}</span>
+                seeing <span class="border rounded bg-yellow-200 px-2 font-bold text-red-500 dark:text-red-400">'??????.pdf'</span>
+                instead of <span
+                    class="border rounded bg-yellow-200 px-2 font-bold text-green-600 dark:text-green-400">'attach.pdf'?</span>
+            </p>
+            <p class="text-xl text-gray-700 dark:text-gray-300 max-w-2xl mx-auto mt-1">
+                <span class="border rounded bg-yellow-200 px-2 font-semibold text-indigo-600 dark:text-indigo-400">Simply drag and drop</span>
+                your files
+                into <span
+                    class=" border rounded bg-yellow-200 px-2 font-semibold text-indigo-600 dark:text-indigo-400">Mac Text Safer</span>
+                to ensure
+                your filenames stay intact on Windows.
+            </p>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-8 mb-4">
+            <Card.Root class="p-1">
                 <Card.Header>
-                    <Card.Title>
-                        <h3 class="text-lg font-semibold text-gray-800 ">{language.name}</h3>
-                        <p class="text-sm text-gray-600 ">Original File Name: {language.original}</p>
+                    <Card.Title class="text-2xl font-semibold text-indigo-600 dark:text-indigo-400 flex items-center">
+                        Secure & Local
                     </Card.Title>
                 </Card.Header>
                 <Card.Content>
-                    <div class="flex items-center space-x-4">
-                        <div class="flex-1 bg-red-50 rounded-lg shadow p-3">
-                            <div class="flex items-center mb-1">
-                                <FileText class="w-4 h-4 text-red-500 mr-2"/>
-                                <span class="text-sm font-medium text-red-700">Before</span>
-                            </div>
-                            <p class="text-sm text-red-600 break-all">{language.before}</p>
-                        </div>
-                        <ArrowRight class="w-6 h-6 text-blue-500 flex-shrink-0"/>
-                        <div class="flex-1 bg-green-50 rounded-lg p-3 shadow">
-                            <div class="flex items-center mb-1">
-                                <FileText class="w-4 h-4 text-green-500 mr-2"/>
-                                <span class="text-sm font-medium text-green-700">After</span>
-                            </div>
-                            <p class="text-sm text-green-600 break-all">{language.after}</p>
-                        </div>
+                    <p class="text-gray-600 dark:text-gray-300">
+                        All processing occurs within your browser. No file uploads, no server storage. Your files, your
+                        control.
+                    </p>
+                </Card.Content>
+            </Card.Root>
+
+            <Card.Root class="p-1">
+                <Card.Header>
+                    <Card.Title class="text-2xl font-semibold text-indigo-600 dark:text-indigo-400 flex items-center">
+                        Multi-Language Support
+                    </Card.Title>
+                </Card.Header>
+                <Card.Content>
+                    <p class="text-gray-600 dark:text-gray-300">
+                        Mac-to-Windows compatibility for all languages. <br/>Preserve text integrity globally.
+
+                    </p>
+                    <div class="flex flex-row items-center">
+                        <p class="text-gray-600 dark:text-gray-300 space-x-2">
+                            Now Supports:
+
+                            {#each languages as lang}
+                                <span class="text-xl" title={lang.name}>{lang.flag}</span>
+                            {/each}
+                        </p>
                     </div>
                 </Card.Content>
-            {/each}
-        </Card.Root>
-        <div class="flex flex-1 items-center justify-center bg-white rounded-lg border-dashed border shadow-2xl"
-        >
-            <div class="flex flex-col items-center gap-1 text-center">
-                <h3 class="text-2xl font-bold tracking-tight">Just Drop file Hear</h3>
-                <p class="text-sm text-muted-foreground">
-                    You can start selling as soon as you add a product.
-                </p>
-                <Button class="mt-4">Add Product</Button>
-            </div>
+            </Card.Root>
         </div>
+
+
+        <Card.Root class="mb-8">
+            <div
+                bind:this={dropZone}
+                class="dark:border-gray-600 p-12 text-center shadow relative overflow-hidden transition-colors duration-300"
+                class:bg-blue-50={isDragging}
+                class:dark:bg-blue-900={isDragging}
+            >
+                <FileLineChart
+                    class="mx-auto h-12 w-12 absolute left-1/2 transform -translate-x-1/2 transition-colors duration-500"
+                    style="top: calc(50% - 90px + {uploadIconY}px);"
+                />
+                <h3 class="mt-28 text-2xl font-semibold text-gray-800 dark:text-gray-200">
+                    {isDragging ? 'Drop files here' : 'Just drop file here'}
+                </h3>
+                <p class="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                    or click to select files
+                </p>
+                <div class="mt-2 flex flex-col justify-center items-center space-x-4">
+                    <div class="relative inline-block text-left">
+
+                    <Select.Root selected={selectedLanguage ? { value: selectedLanguage.name, label: selectedLanguage.name } : undefined}>
+                            <Select.Trigger class="w-[250px]">
+                                <Select.Value placeholder="Selected file language"/>
+                            </Select.Trigger>
+                            <Select.Content>
+                                <Select.Group>
+                                    {#each languages as language}
+                                        <Select.Item value={language.name}>
+                                            {language.flag} {language.name}
+                                        </Select.Item>
+                                    {/each}
+                                </Select.Group>
+                            </Select.Content>
+                        </Select.Root>
+                    </div>
+                </div>
+                <input
+                    type="file"
+                    bind:this={fileInput}
+                    on:change={handleFileInput}
+                    class="hidden"
+                    multiple
+                />
+                <Button
+                    class="mt-6"
+                    variant="default"
+                    on:click={() => fileInput.click()}
+                >
+                    Select Files
+                </Button>
+            </div>
+        </Card.Root>
     </main>
+
+    <footer class="-mt-2 bg-gray-150 dark:bg-gray-800 py-6">
+        <div class="container px-1 text-center text-gray-600 dark:text-gray-300">
+            &copy; 2024 Mac Text Safer. All rights reserved Wonny.
+        </div>
+    </footer>
 </div>
