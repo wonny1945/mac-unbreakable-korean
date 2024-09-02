@@ -1,6 +1,4 @@
 <script lang="ts">
-    import {onMount} from 'svelte';
-    import {selectedCountry, countries, detectCountry} from '$lib/stores/countryStore';
     import {Button} from "$lib/components/ui/button";
     import * as Select from "$lib/components/ui/select";
     import Github from 'lucide-svelte/icons/github';
@@ -9,18 +7,7 @@
     import Sun from "lucide-svelte/icons/sun";
     import Moon from "lucide-svelte/icons/moon";
 
-    onMount(() => {
-        detectCountry();
-    });
 
-    function handleCountryChange(event) {
-        const countryValue = event.value;
-        const countryData = countries.find(country => country.value === countryValue);
-        if (countryData) {
-            console.log(countryData)
-            selectedCountry.set(countryData);
-        }
-    }
 </script>
 
 <header class="sticky top-0 z-10 flex h-16 items-center border-b bg-white/80 backdrop-blur-sm dark:bg-gray-900/80 dark:border-gray-700">
@@ -37,7 +24,7 @@
                 <path d="M35 35 H65 V45 H55 V65 H45 V45 H35 Z" fill="#FFFFFF"/>
             </svg>
             <span class="bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 drop-shadow">
-                Mac Text Safer
+                Mac Title Safer
             </span>
             <svg class="absolute -top-4 -right-32 h-16 " xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 45">
                 <defs>
@@ -54,19 +41,6 @@
             </svg>
         </div>
         <div class="flex items-center gap-4">
-            <Select.Root selected={$selectedCountry} onSelectedChange={handleCountryChange}>
-                <Select.Trigger class="w-[250px]">
-                    <Select.Value placeholder="Select a language"/>
-                </Select.Trigger>
-                <Select.Content>
-                    <Select.Group>
-                        {#each countries as country}
-                            <Select.Item value={country.value}>{country.label}</Select.Item>
-                        {/each}
-                    </Select.Group>
-                </Select.Content>
-            </Select.Root>
-
             <Button variant="ghost" size="icon">
                 <a href="https://github.com/wonny1945" target="_blank" rel="noopener noreferrer">
                     <Github class="h-5 w-5"/>
