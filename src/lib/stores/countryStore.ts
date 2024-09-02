@@ -1,30 +1,70 @@
-import { writable } from 'svelte/store';
+import {writable} from 'svelte/store';
 
-export const countries = [
-    {value: "us", label: "🇺🇸 United States"},
-    {value: "kr", label: "🇰🇷 Korean(한국어)"},
-    {value: "cn", label: "🇨🇳 Chinese(中文)"},
-    {value: "jp", label: "🇯🇵 Japanese(日本語)"},
-    {value: "th", label: "🇹🇭 Thailand(ไทย)"},
-    {value: "ae", label: "🇦🇪 Arab Emirates(العربية)"}
-];
+function sanitizeFileName(fileName: string): string {
+    return fileName.replace(/[<>:"\/\\|?*\x00-\x1F]/g, '')
+        .replace(/^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$/i, '_$1')
+        .replace(/[\s.]+$/, '');
+}
 
-export const selectedCountry = writable(countries[0]);
-export const selectedLanguage = writable(countries[0])
+export function convertFileName(fileName: string): string {
+    let sanitizedName = sanitizeFileName(fileName);
+    // NFC로 정규화
+    return sanitizedName.normalize('NFC');
+}
 
-export async function detectCountry() {
-    try {
-        const response = await fetch('https://ipapi.co/json/');
-        if (!response.ok) {
-            throw new Error('Failed to fetch country information');
-        }
-        const data = await response.json();
-        const detectedCountry = countries.find(c => c.value === data.country_code.toLowerCase());
-        if (detectedCountry) {
-            selectedLanguage.set(detectedCountry);
-            selectedCountry.set(detectedCountry)
-        }
-    } catch (err) {
-        console.error('Error detecting country:', err);
-    }
+interface EncodedFile {
+    originalName: string;
+    encodedName: string;
+}
+
+function createFileEncodingStore() {
+    const {subscribe, set, update} = writable<EncodedFile[]>([]);
+
+    return {
+        subscribe,
+        addFiles: (files: File[]) => {
+            const encodedFiles = files.map((file) => {
+                const encodedName = convertFileName(file.name);
+                return {
+                    originalName: file.name,
+                    encodedName
+                };
+            });
+
+            update(files => [...files, ...encodedFiles]);
+
+            // 파일 다운로드 시작
+            encodedFiles.forEach(file => downloadFile(file, files.find(f => f.name === file.originalName)!));
+        },
+        clear: () => set([])
+    };
+}
+
+export const fileEncodingStore = createFileEncodingStore();
+
+// 파일 다운로드 함수
+function downloadFile(encodedFile: EncodedFile, originalFile: File) {
+    const blob = new Blob([originalFile], { type: originalFile.type });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = encodedFile.encodedName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+}
+
+// 모든 인코딩된 파일 다운로드
+export function downloadAllEncodedFiles(files: File[]) {
+    fileEncodingStore.subscribe(encodedFiles => {
+        encodedFiles.forEach((encodedFile, index) => {
+            setTimeout(() => {
+                const originalFile = files.find(f => f.name === encodedFile.originalName);
+                if (originalFile) {
+                    downloadFile(encodedFile, originalFile);
+                }
+            }, index * 1000);
+        });
+    })();
 }
