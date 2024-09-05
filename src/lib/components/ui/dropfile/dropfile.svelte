@@ -3,8 +3,7 @@
     import {Button} from "$lib/components/ui/button";
     import * as Card from "$lib/components/ui/card/";
     import {onMount} from "svelte";
-    import * as Select from "$lib/components/ui/select";
-    import {convertFileName,fileEncodingStore} from '$lib/stores/countryStore';
+    import {fileEncodingStore} from '$lib/stores/countryStore';
 
     let uploadIconY = 0;
     let direction = 1;
@@ -13,8 +12,6 @@
     let dropZone;
     let fileInput;
     let isDragging = false;
-    let files = [];
-    let convertedFiles = [];
 
     function handleDragEnter(e) {
         e.preventDefault();
@@ -36,20 +33,11 @@
         handleFiles(e.target.files);
     }
 
-    async function handleFiles(fileList) {
-        files = Array.from(fileList);
-        await fileEncodingStore.addFiles(files); // 파일 인코딩 및 자동 다운로드
-        convertFiles();
+    function handleFiles(fileList) {
+        const files = Array.from(fileList);
+        fileEncodingStore.addFiles(files);
+        // 파일 추가 후 자동으로 다운로드 처리됨 (스토어 내에서 처리)
     }
-
-    function convertFiles() {
-        convertedFiles = files.map(file => ({
-            original: file.name,
-            converted: convertFileName(file.name)
-        }));
-        console.log(convertedFiles);
-    }
-
 
     onMount(() => {
         dropZone.addEventListener('dragenter', handleDragEnter);

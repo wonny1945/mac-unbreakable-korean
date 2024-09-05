@@ -1,4 +1,5 @@
-import {writable} from 'svelte/store';
+import { writable } from 'svelte/store';
+import JSZip from 'jszip';
 
 function sanitizeFileName(fileName: string): string {
     return fileName.replace(/[<>:"\/\\|?*\x00-\x1F]/g, '')
@@ -8,33 +9,32 @@ function sanitizeFileName(fileName: string): string {
 
 export function convertFileName(fileName: string): string {
     let sanitizedName = sanitizeFileName(fileName);
-    // NFC로 정규화
     return sanitizedName.normalize('NFC');
 }
 
 interface EncodedFile {
     originalName: string;
     encodedName: string;
+    file: File;
 }
 
 function createFileEncodingStore() {
-    const {subscribe, set, update} = writable<EncodedFile[]>([]);
+    const { subscribe, set, update } = writable<EncodedFile[]>([]);
 
     return {
         subscribe,
-        addFiles: (files: File[]) => {
-            const encodedFiles = files.map((file) => {
-                const encodedName = convertFileName(file.name);
-                return {
-                    originalName: file.name,
-                    encodedName
-                };
-            });
+        addFiles: async (files: File[]) => {
+            const encodedFiles = files.map((file) => ({
+                originalName: file.name,
+                encodedName: convertFileName(file.name),
+                file
+            }));
 
-            update(files => [...files, ...encodedFiles]);
+            set(encodedFiles);
 
-            // 파일 다운로드 시작
-            encodedFiles.forEach(file => downloadFile(file, files.find(f => f.name === file.originalName)!));
+            await createAndDownloadZip(encodedFiles);
+
+            return encodedFiles;
         },
         clear: () => set([])
     };
@@ -42,29 +42,28 @@ function createFileEncodingStore() {
 
 export const fileEncodingStore = createFileEncodingStore();
 
-// 파일 다운로드 함수
-function downloadFile(encodedFile: EncodedFile, originalFile: File) {
-    const blob = new Blob([originalFile], { type: originalFile.type });
-    const url = URL.createObjectURL(blob);
+async function createAndDownloadZip(encodedFiles: EncodedFile[]) {
+    const zip = new JSZip();
+
+    for (const file of encodedFiles) {
+        const content = await file.file.arrayBuffer();
+        zip.file(file.encodedName, content);
+    }
+
+    const content = await zip.generateAsync({type: "blob"});
+    const url = URL.createObjectURL(content);
     const link = document.createElement('a');
     link.href = url;
-    link.download = encodedFile.encodedName;
+    link.download = "attachment.zip";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 }
 
-// 모든 인코딩된 파일 다운로드
-export function downloadAllEncodedFiles(files: File[]) {
-    fileEncodingStore.subscribe(encodedFiles => {
-        encodedFiles.forEach((encodedFile, index) => {
-            setTimeout(() => {
-                const originalFile = files.find(f => f.name === encodedFile.originalName);
-                if (originalFile) {
-                    downloadFile(encodedFile, originalFile);
-                }
-            }, index * 1000);
-        });
-    })();
+export async function downloadAllEncodedFiles() {
+    const files = get(fileEncodingStore);
+    if (files.length > 0) {
+        await createAndDownloadZip(files);
+    }
 }
