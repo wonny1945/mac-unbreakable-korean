@@ -9,17 +9,18 @@
     import {Mainsub} from "$lib/components/ui/mainsub"
     import {Dropfile} from "$lib/components/ui/dropfile";
     import {Footer} from "$lib/components/ui/footer";
+    import {Add} from "$lib/components/ui/add";
 
 
 </script>
 
 <div class="flex min-h-screen w-full flex-col bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-indigo-900">
     <Header/>
-    <main class="flex-1 container mx-auto px-4 py-8">
+    <main class="flex-1 container mx-auto px-2 py-6">
         <Maintitle/>
         <Mainsub/>
         <Dropfile/>
     </main>
+     <Add/>
     <Footer/>
-
 </div>

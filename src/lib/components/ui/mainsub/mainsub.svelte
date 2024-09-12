@@ -5,7 +5,7 @@
     const languages = [
 
         {
-            before: "ㅊㅓㅁㅂㅜㅍㅏㅇㅣㄹ.pdf",
+            before: "ㅊㅓㅁㅂㅜㅍㅏㅇㅣㄹ.hwp",
             after: "첨부파일.hwp",
         },
         {
