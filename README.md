@@ -29,7 +29,9 @@ Deployment URL: [https://mac-unbreakable-korean.vercel.app/](https://mac-unbreak
 
 ## Security and Privacy
 
-This application uses complete client-side processing. Users' files or data are not transmitted to any server, and all processing occurs within the user's browser. This ensures that file security and privacy are safely protected.
+This application uses complete client-side processing. The files you convert — their contents and their names — are never transmitted to any server; all conversion happens within your browser. This ensures that file security and privacy are safely protected.
+
+The site does collect anonymous visit statistics with Google Analytics 4 (page views, browser, approximate location) and shows Kakao AdFit ads. Neither receives your files or file names.
 
 ## License and Usage Conditions
 
