@@ -77,7 +77,9 @@ git commit -m "chore: adapter-auto를 adapter-vercel 6으로 교체"
 
 ---
 
-### Task 2: engines 추가
+> **2026-11-10 결정: Task 2(engines)는 하지 않는다.** Vercel 문서상 `>=` 범위 해석이 명시돼 있지 않고, package.json으로 Node 버전을 덮어쓰는 프로젝트는 지원 종료 예정인 legacy build image를 쓴다(Vercel changelog). Node 버전은 대시보드 Project Settings(26.x)로 관리한다.
+
+### ~~Task 2~~: engines 추가
 
 **Files:**
 - Create: `src/package-engines.test.ts`

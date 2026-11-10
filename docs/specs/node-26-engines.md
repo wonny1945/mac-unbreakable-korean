@@ -36,3 +36,7 @@ Node 버전만 올려서는 안 된다. `adapter-auto` 3.2.2는 `@sveltejs/adapt
 - [ ] main 병합 후 병합 커밋의 Vercel 배포 2개가 모두 success다 (GitHub commit status로 확인).
 - [ ] 라이브 사이트(https://mac-unbreakable-korean.vercel.app) HTML에 `G-88PJZ9PR54`가 있고,
       로드 시 `g/collect`로 `en=page_view` 요청이 나간다 (Playwright로 확인).
+
+## 결정 (2026-11-10)
+
+`engines.node`는 넣지 않는다. 범위(`>=`) 해석이 문서화돼 있지 않고 package.json 덮어쓰기는 legacy build image를 쓴다. Node 버전은 Vercel Project Settings(26.x, 두 프로젝트 모두)로 관리한다. engines 관련 Behavior·Done when 항목은 이 결정으로 대체한다.
