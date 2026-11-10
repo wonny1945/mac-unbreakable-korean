@@ -40,3 +40,15 @@ Node 버전만 올려서는 안 된다. `adapter-auto` 3.2.2는 `@sveltejs/adapt
 ## 결정 (2026-11-10)
 
 `engines.node`는 넣지 않는다. 범위(`>=`) 해석이 문서화돼 있지 않고 package.json 덮어쓰기는 legacy build image를 쓴다. Node 버전은 Vercel Project Settings(26.x, 두 프로젝트 모두)로 관리한다. engines 관련 Behavior·Done when 항목은 이 결정으로 대체한다.
+
+## 결정 2 (2026-11-10)
+
+`@sveltejs/adapter-vercel`은 `^6`이 아니라 정확히 `6.3.0`으로 고정하고, `adapter({ runtime: 'nodejs24.x' })`로 런타임을 명시한다.
+
+- 6.3.1+는 `builder.config.kit.experimental.remoteFunctions`를 읽는데, 지금의 kit 2.5.18에는 `kit.experimental`이 없어
+  빌드가 `TypeError: Cannot read properties of undefined (reading 'remoteFunctions')`로 죽는다 (peer는 `^2.4.0`이라 주장).
+- 6.3.4 이하는 허용 Node가 20/22/24뿐이라 Node 26 빌드를 런타임 명시 없이는 거부한다. Node 26을 받는 건 6.3.5뿐.
+- 그래서 kit 업그레이드(Out of scope) 없이 둘을 만족하는 조합은 6.3.0 + 명시 런타임이다. 함수 런타임은 `nodejs24.x`로
+  고정되고, Node 26은 빌드 환경으로만 쓴다. 위 Behavior의 `^6` 항목과 Done when의 adapter 테스트 항목은 이 결정으로 대체한다
+  (테스트는 `6.3.0` 정확 일치와 `runtime: 'nodejs24.x'`를 확인).
+- Svelte 5 재구축 때(kit 최신화) `^6` 최신 + 기본 런타임으로 다시 본다.
