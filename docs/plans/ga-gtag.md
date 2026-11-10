@@ -4,7 +4,7 @@
 
 **Goal:** 라이브 사이트에 GA4(`G-88PJZ9PR54`) 태그를 붙여 방문 데이터가 쌓이게 한다.
 
-**Architecture:** `src/app.html`의 `<head>`에 공식 Google 태그 스니펫을 정적으로 넣는다. 테스트는 그 파일을 `node:fs`로 읽어 문자열을 검사한다.
+**Architecture:** `src/app.html`의 `<head>`에 공식 Google 태그 스니펫을 정적으로 넣는다. 테스트는 그 파일을 Vite raw import(`./app.html?raw`)로 읽어 문자열을 검사한다 — `@types/node`가 없어 `node:fs`는 쓰지 않는다.
 
 **Tech Stack:** SvelteKit 2 + Svelte 4, vitest (`src/**/*.{test,spec}.{js,ts}`), Vercel 자동 배포.
 
@@ -23,11 +23,10 @@
 `src/app-html.test.ts`:
 
 ```ts
-import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import html from './app.html?raw';
 
 const GA_ID = 'G-88PJZ9PR54';
-const html = readFileSync('src/app.html', 'utf8');
 
 describe('app.html Google tag', () => {
   it('loads gtag.js exactly once, async, with the GA4 id', () => {
@@ -37,9 +36,10 @@ describe('app.html Google tag', () => {
     expect(tags[0]).toMatch(/\sasync\b/);
   });
 
-  it('defines the dataLayer shim that pushes arguments', () => {
+  it('defines the dataLayer shim and sends the js timestamp', () => {
     expect(html).toMatch(/window\.dataLayer\s*=\s*window\.dataLayer\s*\|\|\s*\[\]/);
     expect(html).toMatch(/function gtag\(\)\s*\{\s*dataLayer\.push\(arguments\);?\s*\}/);
+    expect(html).toMatch(/gtag\(\s*(['"])js\1\s*,\s*new Date\(\)\s*\)/);
   });
 
   it('configures the GA4 id', () => {
@@ -49,9 +49,9 @@ describe('app.html Google tag', () => {
   });
 
   it('places the tag before %sveltekit.head%', () => {
-    expect(html.indexOf('googletagmanager.com/gtag/js')).toBeLessThan(
-      html.indexOf('%sveltekit.head%')
-    );
+    const idx = html.indexOf('googletagmanager.com/gtag/js');
+    expect(idx).toBeGreaterThanOrEqual(0);
+    expect(idx).toBeLessThan(html.indexOf('%sveltekit.head%'));
   });
 });
 ```
@@ -59,7 +59,7 @@ describe('app.html Google tag', () => {
 - [ ] **Step 2: 실패 확인**
 
 Run: `npx vitest run` (`npm test`는 watch 모드라 쓰지 않는다)
-Expected: FAIL — 4개 테스트 모두 실패. 첫 테스트는 `expected [] to have a length of 1`.
+Expected: FAIL — 4개 테스트 모두 실패 (통과하는 테스트가 하나라도 있으면 테스트를 고친다). 첫 테스트는 `expected [] to have a length of 1`.
 
 - [ ] **Step 3: 스니펫 추가**
 
@@ -83,6 +83,9 @@ Expected: PASS — 1 file, 4 tests.
 
 Run: `npm run build`
 Expected: 성공 (exit 0).
+
+Run: `npm run check`
+Expected: main 기준선(23 errors / 4 files)에서 늘지 않는다. 이미 실패하는 상태라 0을 요구하지 않는다.
 
 - [ ] **Step 5: 커밋**
 

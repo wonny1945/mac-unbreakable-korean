@@ -27,8 +27,9 @@ Svelte 5 + Cloudflare 전면 재구축이 다음 작업이지만, 그 전까지 
 - [ ] `src/app-html.test.ts`가 추가되고 `npx vitest run`이 통과한다 (현재는 테스트 파일이 없어 exit 1).
   - `gtag.js` 스크립트 태그가 정확히 1개이고 `id=G-88PJZ9PR54`, `async`를 가진다
   - `gtag('config', 'G-88PJZ9PR54')` 호출이 있다 (따옴표 종류 무관)
-  - `dataLayer` 심이 `arguments`를 push 한다
-- [ ] `npm run build`가 성공한다.
+  - `dataLayer` 심이 `arguments`를 push 하고 `gtag('js', new Date())` 호출이 있다
+  - 태그가 `%sveltekit.head%` 앞에 있다
+- [ ] `npm run build`가 성공하고, `npm run check` 오류가 main 기준선(23 errors / 4 files)에서 늘지 않는다.
 - [ ] main 병합 후 Vercel 프로덕션이 재배포되고, 라이브 사이트 로드 시
       `google-analytics.com/g/collect`로 `tid=G-88PJZ9PR54`, `en=page_view`를 담은 POST가 나간다
       (Playwright 네트워크 목록으로 확인).
